@@ -14,12 +14,21 @@ UPPER_PRICE_THRESHOLD = 30
 TAKE_N_POPULAR = 5000
 
 
-def prefilter_items(
+def get_prefiltered_items(
     X: pd.DataFrame,
     lower_price_threshold: Optional[int] = None,
     upper_price_threshold: Optional[int] = None,
     take_n_popular: Optional[int] = None,
 ):
+    """
+    1. Selects data starting from the 20th week.
+    2. Excludes items that have not been sold for the last 12 months.
+    3. Excludes top popular items.
+    4. Excludes top unpopular items.
+    5. Excludes cheap items.
+    6. Excluding expensive items.
+    7. Selects N popular items.
+    """
 
     if lower_price_threshold is None:
         lower_price_threshold = LOWER_PRICE_THRESHOLD
@@ -30,7 +39,7 @@ def prefilter_items(
 
     data = X.copy()
 
-    logging.info("Selecting data starting from 20th week...")
+    logging.info("Selecting data starting from the 20th week...")
 
     data = data[data["week_no"] >= 20]
 
