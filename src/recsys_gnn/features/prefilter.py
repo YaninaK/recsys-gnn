@@ -14,12 +14,12 @@ UPPER_PRICE_THRESHOLD = 30
 TAKE_N_POPULAR = 5000
 
 
-def get_prefiltered_items(
+def prefilter_items(
     X: pd.DataFrame,
     lower_price_threshold: Optional[int] = None,
     upper_price_threshold: Optional[int] = None,
     take_n_popular: Optional[int] = None,
-):
+) -> pd.DataFrame:
     """
     1. Selects data starting from the 20th week.
     2. Excludes items that have not been sold for the last 12 months.
@@ -93,4 +93,4 @@ def get_prefiltered_items(
     )
     data.loc[~data["item_id"].isin(top), "item_id"] = 999999
 
-    return data["item_id"].unique()
+    return data
