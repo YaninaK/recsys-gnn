@@ -54,10 +54,10 @@ def prefilter_items(
 
     logging.info("Excluding top popular items ...")
 
-    popularity = (
-        data.groupby("item_id")["user_id"].nunique() / data["user_id"].nunique()
-    ).reset_index()
-    popularity.rename(columns={"user_id": "share_unique_users"}, inplace=True)
+    n_users = data["user_id"].nunique()
+    popularity = data.groupby("item_id", as_index=False).agg(
+        share_unique_users=("user_id", lambda x: x.nunique() / n_users)
+    )
     top_popular = popularity[popularity["share_unique_users"] > 0.2].item_id.tolist()
     data = data[~data["item_id"].isin(top_popular)]
 
@@ -68,7 +68,9 @@ def prefilter_items(
 
     logging.info("Excluding cheap items ...")
 
-    data["price"] = data["sales_value"] / (np.maximum(data["quantity"], 1))
+    data.loc[:, "price"] = (
+        data["sales_value"] - data["retail_disc"] - data["coupon_match_disc"]
+    ) / np.maximum(data["quantity"], 1)
     cheap_products = (
         data.loc[data["price"] < lower_price_threshold, "item_id"].unique().tolist()
     )
@@ -83,14 +85,13 @@ def prefilter_items(
 
     logging.info(f"Taking {take_n_popular} popular items ...")
 
-    popularity = data.groupby("item_id")["quantity"].sum().reset_index()
-    popularity.rename(columns={"quantity": "n_sold"}, inplace=True)
-
-    top = (
-        popularity.sort_values("n_sold", ascending=False)
-        .head(take_n_popular)
-        .item_id.tolist()
+    popular = (
+        data.groupby("item_id", as_index=False)
+        .agg(n_users=("user_id", "count"))
+        .sort_values("n_users", ascending=False)
+        .head(take_n_popular)["item_id"]
+        .tolist()
     )
-    data.loc[~data["item_id"].isin(top), "item_id"] = 999999
+    data.loc[~data["item_id"].isin(popular), "item_id"] = 999999
 
     return data
