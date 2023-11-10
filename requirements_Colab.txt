@@ -1,0 +1,1 @@
+tensorflow_text==2.14.0
