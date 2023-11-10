@@ -46,7 +46,7 @@ def get_tf_embeddings_BERT(
             bert_results["pooled_output"].numpy(),
             index=text,
             columns=[
-                f"dept_{i}" for i in range(bert_results["pooled_output"].shape[1])
+                f"{feature}_{i}" for i in range(bert_results["pooled_output"].shape[1])
             ],
         )
         .reset_index()
