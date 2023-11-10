@@ -65,3 +65,21 @@ def preprocess_curr_size_of_product(
         df[new_feature] = df[new_feature].apply(lambda text: re.sub(i, j, text))
 
     return df
+
+
+def preprocess_manufacturer(item_features: pd.DataFrame) -> pd.DataFrame:
+    df = item_features.groupby("manufacturer", as_index=False).agg(
+        item_list=("item_id", f_padding)
+    )
+
+    return df
+
+
+def f_padding(x, T=10):
+    x = x.tolist()
+    if len(x) < T:
+        n = T - len(x)
+        x += n * [0]
+        return " ".join([str(i) for i in x])
+
+    return " ".join([str(i) for i in x[:T]])
