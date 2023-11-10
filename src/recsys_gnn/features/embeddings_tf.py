@@ -1,13 +1,59 @@
 import logging
 import pandas as pd
 import numpy as np
+
 import tensorflow as tf
+import tensorflow_hub as hub
+import tensorflow_text as text
 from typing import Optional
 
 
 logger = logging.getLogger(__name__)
 
 __all__ = ["generate_tf_embeddings"]
+
+
+BERT_PREPROCESS_MODEL_URL = "https://tfhub.dev/tensorflow/bert_en_uncased_preprocess/3"
+BERT_MODEL_URL = (
+    "https://tfhub.dev/tensorflow/small_bert/bert_en_uncased_L-4_H-512_A-8/1"
+)
+
+
+def get_tf_embeddings_BERT(
+    df: pd.DataFrame,
+    feature: str,
+    bert_preprocess_model_URL: Optional[str] = None,
+    bert_model_URL: Optional[str] = None,
+) -> pd.DataFrame:
+    """
+    Generates embeddings for text features using BERT models loaded from TensorFlow Hub.
+    """
+
+    if bert_preprocess_model_URL is None:
+        bert_preprocess_model_URL = BERT_PREPROCESS_MODEL_URL
+    if bert_model_URL is None:
+        bert_model_URL = BERT_MODEL_URL
+
+    text = df[feature].unique().tolist()
+    bert_preprocess_model = hub.KerasLayer(bert_preprocess_model_URL)
+    text_preprocessed = bert_preprocess_model(text)
+
+    bert_model = hub.KerasLayer(bert_model_URL)
+    bert_results = bert_model(text_preprocessed)
+
+    tf_embeddings = (
+        pd.DataFrame(
+            bert_results["pooled_output"].numpy(),
+            index=text,
+            columns=[
+                f"dept_{i}" for i in range(bert_results["pooled_output"].shape[1])
+            ],
+        )
+        .reset_index()
+        .rename(columns={"index": feature})
+    )
+
+    return tf_embeddings
 
 
 def get_tf_embeddings_BOW(
