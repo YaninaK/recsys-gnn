@@ -87,6 +87,7 @@ def get_tf_embeddings_BOW(
     emb = pd.DataFrame(
         emb, index=df.index, columns=[f"{col_name}_{i}" for i in range(max_len)]
     )
+    emb = pd.concat([df[[feature]], emb], axis=1)
 
     return emb, model
 
