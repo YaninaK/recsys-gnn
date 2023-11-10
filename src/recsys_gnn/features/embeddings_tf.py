@@ -56,7 +56,7 @@ def get_tf_embeddings_BERT(
     return tf_embeddings
 
 
-def get_tf_embeddings_BOW(
+def fit_transform_tf_embeddings_BOW(
     df: pd.DataFrame,
     feature: str,
     max_features: int,
@@ -83,12 +83,31 @@ def get_tf_embeddings_BOW(
     model.add(tf.keras.Input(shape=(1,), dtype=tf.string))
     model.add(vectorize_layer)
 
-    emb = model.predict(df[feature])
-    emb = pd.DataFrame(
-        emb, index=df.index, columns=[f"{col_name}_{i}" for i in range(max_len)]
+    embeddings_BOW = model.predict(df[feature])
+    embeddings_BOW = pd.DataFrame(
+        embeddings_BOW,
+        index=df.index,
+        columns=[f"{col_name}_{i}" for i in range(max_len)],
     )
 
-    return emb, model
+    return embeddings_BOW, model, vectorize_layer
+
+
+def transform_tf_embeddings_BOW(
+    df: pd.DataFrame,
+    feature: str,
+    model,
+    col_name: str,
+) -> pd.DataFrame:
+
+    embeddings_BOW = model.predict(df[feature])
+    embeddings_BOW = pd.DataFrame(
+        embeddings_BOW,
+        index=df.index,
+        columns=[f"{col_name}_{i}" for i in range(model.output_shape[1])],
+    )
+
+    return embeddings_BOW
 
 
 def fit_transform_one_hot_encoding(df: pd.DataFrame, feature: str):
@@ -97,7 +116,7 @@ def fit_transform_one_hot_encoding(df: pd.DataFrame, feature: str):
         vocabulary=vocab, output_mode="one_hot", name="str_lookup_layer"
     )
     arr = str_lookup_layer(df[feature]).numpy()[:, 1:]
-    cols = [f'{feature} {i}' for i in vocab]
+    cols = [f"{feature} {i}" for i in vocab]
 
     return pd.DataFrame(arr, index=df.index, columns=cols), str_lookup_layer
 
@@ -106,7 +125,7 @@ def transform_one_hot_encoding(
     df: pd.DataFrame, feature: str, str_lookup_layer
 ) -> pd.DataFrame:
     arr = str_lookup_layer(df[feature]).numpy()[:, 1:]
-    cols = [f'{feature} {i}' for i in str_lookup_layer.get_vocabulary()[1:]]
+    cols = [f"{feature} {i}" for i in str_lookup_layer.get_vocabulary()[1:]]
 
     return pd.DataFrame(arr, index=df.index, columns=cols)
 
